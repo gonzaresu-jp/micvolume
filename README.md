@@ -38,3 +38,57 @@
 
 1. タスクスケジューラを開き、「SetMicVolume_Start」「SetMicVolume_Hourly」の2つを手動で削除
 2. `C:\Program Files\mic\` フォルダを削除
+
+## 🔧 内部で行っている処理（C++）
+
+このツールは、以下のように C++ と Windows Core Audio API（WASAPI）を使用して、  
+**全ての録音デバイスのマイク音量を100%に設定**しています。
+
+```cpp
+#include <windows.h>
+#include <mmdeviceapi.h>
+#include <endpointvolume.h>
+
+#pragma comment(lib, "Ole32.lib")
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    CoInitialize(NULL);
+
+    IMMDeviceEnumerator* pEnumerator = NULL;
+    IMMDeviceCollection* pCollection = NULL;
+    UINT count = 0;
+
+    if (FAILED(CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
+        __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator))) {
+        return -1;
+    }
+
+    if (FAILED(pEnumerator->EnumAudioEndpoints(eCapture, DEVICE_STATE_ACTIVE, &pCollection))) {
+        pEnumerator->Release();
+        return -1;
+    }
+
+    if (FAILED(pCollection->GetCount(&count))) {
+        pCollection->Release();
+        pEnumerator->Release();
+        return -1;
+    }
+
+    for (UINT i = 0; i < count; ++i) {
+        IMMDevice* pDevice = NULL;
+        IAudioEndpointVolume* pVolume = NULL;
+
+        if (SUCCEEDED(pCollection->Item(i, &pDevice))) {
+            if (SUCCEEDED(pDevice->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, NULL, (void**)&pVolume))) {
+                pVolume->SetMasterVolumeLevelScalar(1.0f, NULL); // 100%
+                pVolume->Release();
+            }
+            pDevice->Release();
+        }
+    }
+
+    pCollection->Release();
+    pEnumerator->Release();
+    CoUninitialize();
+    return 0;
+}
