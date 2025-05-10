@@ -10,10 +10,13 @@
 
 ## 📦 インストール方法
 
-1.[<>Code]→[Download ZIP] でダウンロード
+1. [<>Code]→[Download ZIP] でダウンロード
 ![ダウンロード](download.png)
+
 2. `MicVolumeInstaller.exe` を実行してください（管理者として実行を推奨）
+
 3. `C:\Program Files\mic\micvolume.exe` がインストールされます
+
 4. タスクスケジューラに2つのタスクが自動登録されます
    - 起動時に実行
    - 1時間ごとに実行
